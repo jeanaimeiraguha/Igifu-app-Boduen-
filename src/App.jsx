@@ -1,35 +1,18 @@
-import React from 'react'
-import { BrowserRouter as Router, Routes, Route } from 'react-router-dom'
+import React from "react";
 
-// Importing all page components
-import Home from './Components/WelcomePages/Home.jsx'
-import LoginPage from './Components/WelcomePages/Loginpage.jsx'
-import SignupPage from './Components/WelcomePages/Signup.jsx'
-import MealPage from './Components/WelcomePages/MealPage.jsx'
-import NotFoundPage from './Components/Notfound.jsx'
 
-import './App.css'
 
-const App = () => {
-  return (
-    <Router>
-      <Routes>
-        {/* Home / WelcomePage Route */}
-        <Route path="/" element={<Home />} />
 
-        {/* Login Page Route */}
-        <Route path="/login" element={<LoginPage />} />
+import IgifuMealCard from "./Components/WelcomePages/Home7.jsx";
+import MealPage from "./Components/WelcomePages/Home8.jsx";
+import MealWalletApp from "./Components/WelcomePages/page10.jsx";
+import RestaurantBrowseApp from "./Components/WelcomePages/fo.jsx";
+import FavouritesScreen from "./Components/WelcomePages/c.jsx";
 
-        {/* Signup Page Route */}
-        <Route path="/signup" element={<SignupPage />} />
 
-        {/* Meal Page Route */}
-        <Route path="/meals" element={<MealPage />} />
-          <Route path="*" element={<NotFoundPage />} />
-
-      </Routes>
-    </Router>
-  )
+function App(){
+return(
+  <FavouritesScreen/>
+)
 }
-
 export default App
