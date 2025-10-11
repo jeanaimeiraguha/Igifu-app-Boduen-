@@ -26,7 +26,7 @@ const generateEmojiElements = () => {
   });
 };
 
-const MealWalletApp = () => {
+const MealWalletApphome = () => {
   const [selectedCard, setSelectedCard] = useState('No Card');
 
   return (
@@ -123,4 +123,4 @@ const MealWalletApp = () => {
   );
 };
 
-export default MealWalletApp;
+export default MealWalletApphome;

@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 
-const MealWallet = () => {
+const MealWallet14 = () => {
   const [mealBalance] = useState(45000);
   const [plateCount, setPlateCount] = useState(1);
   const [selectedCard, setSelectedCard] = useState('');
@@ -171,4 +171,4 @@ const MealWallet = () => {
   );
 };
 
-export default MealWallet;
+export default MealWallet14;

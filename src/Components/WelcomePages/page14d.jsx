@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 
-const MealWallet = () => {
+const MealWallet14d = () => {
   const [mealBalance] = useState(54000);
   const [flexieBalance] = useState(0);
   const [plateCount, setPlateCount] = useState(1);
@@ -179,4 +179,4 @@ const MealWallet = () => {
   );
 };
 
-export default MealWallet;
+export default MealWallet14d;
