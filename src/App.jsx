@@ -15,32 +15,45 @@ import MealWalletpage10 from "./Components/WelcomePages/page10";
 import MealWalletpage14 from "./Components/WelcomePages/Page14";
 import MealWallet14 from "./Components/WelcomePages/page14b";
 import MealWallet14d from "./Components/WelcomePages/page14d";
+import IgifuPurchase from "./Components/WelcomePages/Pyment30";
+import IgifuPurchase60 from "./Components/WelcomePages/Payment60";
+import UnlockPage from "./Components/WelcomePages/Unlockpage";
 
 function App() {
   return (
     <Router>
       <Routes>
-        {/* ✅ Auth Routes */}
+        {/* Home / Welcome */}
         <Route path="/" element={<WelcomePage />} />
+
+        {/* Authentication */}
         <Route path="/login" element={<LogInPage />} />
         <Route path="/signup" element={<SignUpPage />} />
 
-        {/* ✅ Meal and Wallet Pages */}
-        <Route path="/meal-wallet" element={<MealWallet />} />
-        <Route path="/meal-wallet-app" element={<MealWalletApp />} />
-        <Route path="/meal-page" element={<MealPage />} />
+        {/* Meal Wallet */}
+        <Route path="/mealwallet" element={<MealWallet />} />
+        <Route path="/mealwalletapp" element={<MealWalletApp />} />
+        <Route path="/mealwallethome" element={<MealWalletApphome />} />
+        <Route path="/mealwallet10" element={<MealWalletpage10 />} />
+        <Route path="/mealwallet14" element={<MealWalletpage14 />} />
+        <Route path="/mealwallet14b" element={<MealWallet14 />} />
+        <Route path="/mealwallet14d" element={<MealWallet14d />} />
 
-        {/* ✅ Restaurant & Favourites */}
+        {/* Meal / Restaurant */}
         <Route path="/favourites" element={<FavouritesScreen />} />
         <Route path="/browse" element={<RestaurantBrowseApp />} />
+        <Route path="/igifu-mealcard" element={<IgifuMealCard />} />
+        <Route path="/mealpage" element={<MealPage />} />
 
-        {/* ✅ Igifu Home Pages */}
-        <Route path="/igifu-card" element={<IgifuMealCard />} />
-        <Route path="/home-wallet" element={<MealWalletApphome />} />
-        <Route path="/wallet-page10" element={<MealWalletpage10 />} />
-        <Route path="/wallet-page14" element={<MealWalletpage14 />} />
-        <Route path="/wallet14" element={<MealWallet14 />} />
-        <Route path="/wallet14d" element={<MealWallet14d />} />
+        {/* Payment */}
+        <Route path="/purchase30" element={<IgifuPurchase />} />
+        <Route path="/purchase60" element={<IgifuPurchase60 />} />
+
+        {/* Unlock */}
+        <Route path="/unlock" element={<UnlockPage />} />
+
+        {/* Catch-all route for unknown paths */}
+        <Route path="*" element={<h2>Page Not Found</h2>} />
       </Routes>
     </Router>
   );
