@@ -1,9 +1,11 @@
 import React, { useState } from "react";
-import { FaLock, FaArrowRight, FaQuestionCircle, FaUser } from "react-icons/fa";
+import { FaLock, FaArrowRight, FaQuestionCircle, FaUser, FaUtensils } from "react-icons/fa";
 import { useNavigate } from "react-router-dom";
 
 const SignUpPage = () => {
   const navigate = useNavigate();
+  const [currentStep, setCurrentStep] = useState('roleSelection'); // 'roleSelection', 'form'
+  const [selectedRole, setSelectedRole] = useState('');
   const [isLogin, setIsLogin] = useState(false);
   const [formData, setFormData] = useState({
     firstName: "",
@@ -14,6 +16,26 @@ const SignUpPage = () => {
     confirmPin: "",
     rememberMe: false,
   });
+
+  const handleRoleSelection = (role) => {
+    setSelectedRole(role);
+    setCurrentStep('form');
+  };
+
+  const handleBackToRoleSelection = () => {
+    setCurrentStep('roleSelection');
+    setSelectedRole('');
+    setFormData({
+      firstName: "",
+      otherNames: "",
+      username: "",
+      email: "",
+      pin: "",
+      confirmPin: "",
+      rememberMe: false,
+    });
+    setIsLogin(false);
+  };
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -30,39 +52,119 @@ const SignUpPage = () => {
       // pretend login success
       navigate("/igifu-dashboard");
     } else {
+      console.log("Sign Up Data:", { ...formData, role: selectedRole });
       alert("Sign Up Submitted!");
     }
   };
 
+  // Role Selection Screen
+  if (currentStep === 'roleSelection') {
+    return (
+      <div className="min-h-screen flex flex-col items-center justify-center bg-gray-50 relative py-6 font-sans">
+        {/* Back Button */}
+        <button
+          onClick={() => navigate("/")}
+          className="absolute top-4 left-4 bg-yellow-400 text-gray-800 px-4 py-1 rounded-full font-semibold hover:bg-yellow-500 transition flex items-center"
+        >
+          <span className="mr-2">←</span> Back
+        </button>
+
+        {/* Header */}
+        <div className="text-center mt-12">
+          <h2 className="text-2xl font-bold text-gray-800 mb-2">Welcome to Igifu</h2>
+          <p className="text-gray-500 text-sm">Choose how you want to join us</p>
+        </div>
+
+        {/* Role Selection Cards */}
+        <div className="w-full max-w-md mt-8 space-y-4">
+          {/* Student Option */}
+          <button
+            onClick={() => handleRoleSelection('student')}
+            className="w-full p-6 bg-white rounded-xl shadow-lg border-2 border-gray-200 hover:border-blue-500 hover:bg-blue-50 transition-all duration-200 flex items-center justify-between group"
+          >
+            <div className="flex items-center space-x-4">
+              <div className="bg-blue-100 p-3 rounded-full group-hover:bg-blue-200 transition-colors">
+                <FaUser className="text-blue-600 text-xl" />
+              </div>
+              <div className="text-left">
+                <h3 className="text-lg font-semibold text-gray-800">I'm a Student</h3>
+                <p className="text-gray-500 text-sm">Join to order food from restaurants</p>
+              </div>
+            </div>
+            <FaArrowRight className="text-gray-400 group-hover:text-blue-600 transition-colors" />
+          </button>
+
+          {/* Restaurant Owner Option */}
+          <button
+            onClick={() => handleRoleSelection('restaurant')}
+            className="w-full p-6 bg-white rounded-xl shadow-lg border-2 border-gray-200 hover:border-blue-500 hover:bg-blue-50 transition-all duration-200 flex items-center justify-between group"
+          >
+            <div className="flex items-center space-x-4">
+              <div className="bg-blue-100 p-3 rounded-full group-hover:bg-blue-200 transition-colors">
+                <FaUtensils className="text-blue-600 text-xl" />
+              </div>
+              <div className="text-left">
+                <h3 className="text-lg font-semibold text-gray-800">I'm a Restaurant Owner</h3>
+                <p className="text-gray-500 text-sm">Register your restaurant with us</p>
+              </div>
+            </div>
+            <FaArrowRight className="text-gray-400 group-hover:text-blue-600 transition-colors" />
+          </button>
+        </div>
+
+        {/* Contact Info */}
+        <div className="text-center mt-8">
+          <p className="text-gray-500 text-sm mb-2">
+            Need help? We're here to assist you.
+          </p>
+          <button className="bg-transparent border border-blue-600 text-blue-600 px-4 py-1 rounded-full font-semibold hover:bg-blue-600 hover:text-white transition flex items-center mx-auto">
+            Contact Us <FaArrowRight className="ml-2" />
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  // Form Screen (existing form with role context)
   return (
     <div className="min-h-screen flex flex-col items-center justify-center bg-gray-50 relative py-6 font-sans">
       {/* Back Button */}
       <button
-        onClick={() => navigate("/")}
+        onClick={handleBackToRoleSelection}
         className="absolute top-4 left-4 bg-yellow-400 text-gray-800 px-4 py-1 rounded-full font-semibold hover:bg-yellow-500 transition flex items-center"
       >
-        <span className="mr-2">←</span> Back
+        <span className="mr-2">←</span> Back to role selection
       </button>
 
-      {/* Header */}
+      {/* Header with Role Context */}
       <div className="text-center mt-12">
-        <h4 className="font-bold mb-1">
-          <button
-            className={`mr-2 ${!isLogin ? "text-blue-600" : "text-gray-800"}`}
-            onClick={() => setIsLogin(false)}
-          >
-            Sign Up
-          </button>
-          |
-          <button
-            className={`ml-2 ${isLogin ? "text-blue-600" : "text-gray-800"}`}
-            onClick={() => setIsLogin(true)}
-          >
-            Log In
-          </button>
-        </h4>
+        <div className="flex items-center justify-center mb-2">
+          {selectedRole === 'student' ? (
+            <FaUser className="text-blue-600 text-2xl mr-2" />
+          ) : (
+            <FaUtensils className="text-blue-600 text-2xl mr-2" />
+          )}
+          <h4 className="font-bold">
+            <button
+              className={`mr-2 ${!isLogin ? "text-blue-600" : "text-gray-800"}`}
+              onClick={() => setIsLogin(false)}
+            >
+              Sign Up
+            </button>
+            |
+            <button
+              className={`ml-2 ${isLogin ? "text-blue-600" : "text-gray-800"}`}
+              onClick={() => setIsLogin(true)}
+            >
+              Log In
+            </button>
+          </h4>
+        </div>
         <p className="text-gray-500 text-sm">
-          {isLogin ? "Welcome back!" : "Sign up for Free :)"}
+          {isLogin 
+            ? `Welcome back, ${selectedRole === 'student' ? 'Student' : 'Restaurant Owner'}!` 
+            : `${selectedRole === 'student' ? 'Student' : 'Restaurant Owner'} - Sign up for Free :)`
+          }
         </p>
       </div>
 
@@ -94,7 +196,7 @@ const SignUpPage = () => {
             <div className="relative">
               <input
                 type="text"
-                placeholder="Username"
+                placeholder={selectedRole === 'student' ? 'Username' : 'Restaurant Name'}
                 name="username"
                 value={formData.username}
                 onChange={handleChange}
@@ -120,7 +222,7 @@ const SignUpPage = () => {
             <FaUser className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
             <input
               type="text"
-              placeholder="Username or Email"
+              placeholder={selectedRole === 'student' ? 'Username or Email' : 'Restaurant Name or Email'}
               name="username"
               value={formData.username}
               onChange={handleChange}
@@ -175,7 +277,7 @@ const SignUpPage = () => {
           type="submit"
           className="w-full bg-blue-600 text-white py-2 rounded-full font-semibold text-lg hover:bg-blue-700 transition"
         >
-          {isLogin ? "Log In" : "Sign Up"}
+          {isLogin ? "Log In" : "Sign Up"} as {selectedRole === 'student' ? 'Student' : 'Restaurant Owner'}
         </button>
 
         {!isLogin && (
@@ -188,13 +290,28 @@ const SignUpPage = () => {
         )}
       </form>
 
+      {/* Role-specific footer message */}
       <div className="text-center mt-4">
-        <p className="text-gray-500 text-sm mb-2">
-          Want to register your restaurant? Contact us, we do all the work.
-        </p>
-        <button className="bg-transparent border border-blue-600 text-blue-600 px-4 py-1 rounded-full font-semibold hover:bg-blue-600 hover:text-white transition flex items-center mx-auto">
-          Contact Us <FaArrowRight className="ml-2" />
-        </button>
+        {selectedRole === 'student' ? (
+          <p className="text-gray-500 text-sm">
+            Are you a restaurant owner?{" "}
+            <button 
+              onClick={() => handleRoleSelection('restaurant')}
+              className="text-blue-600 font-semibold underline hover:text-blue-700"
+            >
+              Switch to restaurant registration
+            </button>
+          </p>
+        ) : (
+          <>
+            <p className="text-gray-500 text-sm mb-2">
+              Need help with restaurant registration? We do all the work for you.
+            </p>
+            <button className="bg-transparent border border-blue-600 text-blue-600 px-4 py-1 rounded-full font-semibold hover:bg-blue-600 hover:text-white transition flex items-center mx-auto">
+              Contact Us <FaArrowRight className="ml-2" />
+            </button>
+          </>
+        )}
       </div>
     </div>
   );
