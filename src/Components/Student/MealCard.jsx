@@ -79,7 +79,7 @@ const RestaurantCard = ({ restaurant, index, onToggleFav, onOrder, showToast }) 
             {Object.entries(restaurant.priceInfo).map(([price, meals]) => (
               <div key={price} className="flex items-center gap-1">
                 <FaUtensils className="text-gray-500" />
-                <span>{price} frw / {meals} meals</span>
+                <span>{price} frw / {meals} Month</span>
               </div>
             ))}
           </div>
@@ -201,19 +201,19 @@ const RestozPage = ({ pageMotion, showToast }) => {
     },
     {
       id: 3, name: "UR - Nyarugaenge Cafeteria", type: "Standard", campus: "Nyarugaenge Campus",
-      priceInfo: { "25k": 50, "15k": 25 }, walkTime: "5 mins", selfService: true, isFav: false,
+      priceInfo: { "25k": 1, "15k": 25 }, walkTime: "5 mins", selfService: true, isFav: false,
       image: "https://images.unsplash.com/photo-1600891964599-f61ba0e24092?w=400&q=80",
       paymentType: "Frw"
     },
     {
       id: 4, name: "RP - Tumba Bistro", type: "Standard", campus: "Tumba Campus",
-      priceInfo: { "20k": 40 }, walkTime: "7 mins", selfService: false, isFav: true,
+      priceInfo: { "20k": 2 }, walkTime: "7 mins", selfService: false, isFav: true,
       image: "https://images.unsplash.com/photo-1546069901-ba9599a7e63?w=400&q=80",
       paymentType: "Frw"
     },
     {
       id: 5, name: "Campus Canteen - Gishushu", type: "Standard", campus: "Gishushu Campus",
-      priceInfo: { "18k": 35 }, walkTime: "15 mins", selfService: true, isFav: false,
+      priceInfo: { "18k": 2 }, walkTime: "15 mins", selfService: true, isFav: false,
       image: "https://images.unsplash.com/photo-1565557597671-960612164106?ixlib=rb-4.0.3&q=80&fm=jpg&crop=faces&mt=1677947264&w=300&h=300&fit=crop",
       paymentType: "Frw"
     }
