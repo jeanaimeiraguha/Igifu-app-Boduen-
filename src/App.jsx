@@ -6,7 +6,7 @@ import LogInPage from "./Components/WelcomePages/Loginpage";
 // import SignUpPage from "./Components/WelcomePages/Signup";
 import SignUpPage from "./Components/Pages/auth/Signup";
 
-
+import RestaurantDashboard from "./Components/restaurent/RestaurentDashbaord";
 import MealWalletApphome from "./Components/WelcomePages/Home8";
 import MealPage from "./Components/WelcomePages/MealPage";
 import MealWalletpage10 from "./Components/WelcomePages/page10";
@@ -22,7 +22,7 @@ function App() {
         <Route path="/" element={<WelcomePage />} />
         <Route path="/login" element={<LogInPage />} />
         <Route path="/signup" element={<SignUpPage />} />
-
+<Route path="/restaurentdashboard" element={<RestaurantDashboard/>}></Route>
         {/* ✅ Meal and Wallet Pages */}
   
         <Route path="/igifu-dashboard" element={<IgifuDashboard />} />

@@ -48,12 +48,34 @@ const SignUpPage = () => {
 
   const handleSubmit = (e) => {
     e.preventDefault();
+
     if (isLogin) {
-      // pretend login success
-      navigate("/igifu-dashboard");
+      // --- NEW FEATURE: Specific PIN check for login ---
+      if (selectedRole === 'student') {
+        if (formData.pin === 'student') {
+          console.log("Student login successful");
+          navigate("/igifu-dashboard");
+        } else {
+          alert("Incorrect PIN for student. Please use 'student' to log in.");
+        }
+      } else if (selectedRole === 'restaurant') {
+        if (formData.pin === 'restaurent') {
+          console.log("Restaurant owner login successful");
+          navigate("/restaurentdashboard");
+        } else {
+          alert("Incorrect PIN for restaurant owner. Please use 'restaurent' to log in.");
+        }
+      }
     } else {
+      // --- NEW FEATURE: PIN confirmation only for students on sign-up ---
+      if (selectedRole === 'student' && formData.pin !== formData.confirmPin) {
+        alert("PINs do not match! Please re-enter.");
+        return; // Stop the form submission
+      }
+      
       console.log("Sign Up Data:", { ...formData, role: selectedRole });
-      alert("Sign Up Submitted!");
+      alert("Sign Up Submitted! You can now log in using the specific PIN for your role.");
+      setIsLogin(true); // Switch to login form
     }
   };
 
@@ -76,7 +98,7 @@ const SignUpPage = () => {
         </div>
 
         {/* Role Selection Cards */}
-        <div className="w-full max-w-md mt-8 space-y-4">
+        <div className="w-full max-w-md mt-8 space-y-4 px-4">
           {/* Student Option */}
           <button
             onClick={() => handleRoleSelection('student')}
@@ -129,10 +151,7 @@ const SignUpPage = () => {
   return (
     <div className="min-h-screen flex flex-col items-center justify-center bg-gray-50 relative py-6 font-sans">
       {/* Back Button */}
-      <button
-        onClick={handleBackToRoleSelection}
-        className="absolute top-4 left-4 bg-yellow-400 text-gray-800 px-4 py-1 rounded-full font-semibold hover:bg-yellow-500 transition flex items-center"
-      >
+      <button onClick={handleBackToRoleSelection} className="absolute top-4 left-4 bg-yellow-400 text-gray-800 px-4 py-1 rounded-full font-semibold hover:bg-yellow-500 transition flex items-center" >
         <span className="mr-2">←</span> Back to role selection
       </button>
 
@@ -161,8 +180,8 @@ const SignUpPage = () => {
           </h4>
         </div>
         <p className="text-gray-500 text-sm">
-          {isLogin 
-            ? `Welcome back, ${selectedRole === 'student' ? 'Student' : 'Restaurant Owner'}!` 
+          {isLogin
+            ? `Welcome back, ${selectedRole === 'student' ? 'Student' : 'Restaurant Owner'}!`
             : `${selectedRole === 'student' ? 'Student' : 'Restaurant Owner'} - Sign up for Free :)`
           }
         </p>
@@ -246,7 +265,8 @@ const SignUpPage = () => {
           <FaQuestionCircle className="absolute right-3 text-yellow-500" />
         </div>
 
-        {!isLogin && (
+        {/* --- NEW FEATURE: This "Retype PIN" field only shows for students on sign-up --- */}
+        {!isLogin && selectedRole === 'student' && (
           <div className="relative flex items-center">
             <FaLock className="absolute left-3 text-green-500" />
             <input
@@ -256,7 +276,7 @@ const SignUpPage = () => {
               value={formData.confirmPin}
               onChange={handleChange}
               className="w-full px-10 py-2 rounded-full border border-gray-300 focus:ring-2 focus:ring-blue-500"
-              required
+              required // This 'required' only applies when the field is visible
             />
             <FaQuestionCircle className="absolute right-3 text-yellow-500" />
           </div>
@@ -295,7 +315,7 @@ const SignUpPage = () => {
         {selectedRole === 'student' ? (
           <p className="text-gray-500 text-sm">
             Are you a restaurant owner?{" "}
-            <button 
+            <button
               onClick={() => handleRoleSelection('restaurant')}
               className="text-blue-600 font-semibold underline hover:text-blue-700"
             >
