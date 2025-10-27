@@ -5,49 +5,13 @@ import {
   useMotionValue,
   useTransform,
   useReducedMotion,
+  useScroll,
+  useSpring,
 } from "framer-motion";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 
 /**
- * Helper: 3D tilt on hover using mouse position
- */
-function TiltCard({ className = "", children }) {
-  const ref = useRef(null);
-  const x = useMotionValue(0);
-  const y = useMotionValue(0);
-  const rotateX = useTransform(y, [-50, 50], [8, -8]);
-  const rotateY = useTransform(x, [-50, 50], [-8, 8]);
-
-  const handleMouseMove = (e) => {
-    if (!ref.current) return;
-    const rect = ref.current.getBoundingClientRect();
-    const relX = e.clientX - rect.left - rect.width / 2;
-    const relY = e.clientY - rect.top - rect.height / 2;
-    x.set(relX / 3);
-    y.set(relY / 3);
-  };
-
-  return (
-    <motion.div
-      ref={ref}
-      onMouseMove={handleMouseMove}
-      onMouseLeave={() => {
-        x.set(0);
-        y.set(0);
-      }}
-      style={{ rotateX, rotateY, transformStyle: "preserve-3d" }}
-      className={className}
-      whileHover={{ scale: 1.02 }}
-      whileTap={{ scale: 0.98 }}
-      transition={{ type: "spring", stiffness: 220, damping: 18 }}
-    >
-      {children}
-    </motion.div>
-  );
-}
-
-/**
- * Animated stat/number counter
+ * Animated counter hook
  */
 function useCounter(target = 0, duration = 1.2) {
   const [value, setValue] = useState(0);
@@ -65,737 +29,965 @@ function useCounter(target = 0, duration = 1.2) {
   return value;
 }
 
-// ====================================================================================
-// --- Igifu Digital Card: Holographic, animated, dark/light-aware, reduced-motion friendly
-// ====================================================================================
-function IgifuDigitalCard({ startBalance = 25000, name = "Student Name", campus = "Kigali Campus" }) {
-  const shouldReduce = useReducedMotion();
-  const [flipped, setFlipped] = useState(false);
-  const [mouse, setMouse] = useState({ x: 160, y: 110 });
-  const [ripple, setRipple] = useState(null);
-  const cardRef = useRef(null);
-
-  // Animated balance counter
-  const balance = useCounter(startBalance, 1.2);
-
-  // Random sparkles around the card
-  const sparkles = useMemo(
-    () =>
-      Array.from({ length: 12 }).map((_, i) => ({
-        id: i,
-        top: Math.random() * 100,
-        left: Math.random() * 100,
-        size: 4 + Math.random() * 6,
-        delay: Math.random() * 2,
-        dur: 2 + Math.random() * 2.5,
-      })),
-    []
-  );
-
-  // Simple QR data matrix (static per mount)
-  const qr = useMemo(
-    () =>
-      Array.from({ length: 18 }, () =>
-        Array.from({ length: 18 }, () => Math.random() > 0.52)
-      ),
-    []
-  );
+/**
+ * Enhanced 3D Tilt Card
+ */
+function TiltCard({ className = "", children }) {
+  const ref = useRef(null);
+  const x = useMotionValue(0);
+  const y = useMotionValue(0);
+  const rotateX = useTransform(y, [-100, 100], [10, -10]);
+  const rotateY = useTransform(x, [-100, 100], [-10, 10]);
 
   const handleMouseMove = (e) => {
-    if (!cardRef.current) return;
-    const r = cardRef.current.getBoundingClientRect();
-    setMouse({ x: e.clientX - r.left, y: e.clientY - r.top });
+    if (!ref.current) return;
+    const rect = ref.current.getBoundingClientRect();
+    const relX = e.clientX - rect.left - rect.width / 2;
+    const relY = e.clientY - rect.top - rect.height / 2;
+    x.set(relX / 4);
+    y.set(relY / 4);
   };
 
-  const handlePointerDown = (e) => {
-    if (!cardRef.current) return;
-    const r = cardRef.current.getBoundingClientRect();
-    const x = e.clientX - r.left;
-    const y = e.clientY - r.top;
-    const id = Date.now();
-    setRipple({ id, x, y });
-    setTimeout(() => setRipple(null), 600);
+  const handleMouseLeave = () => {
+    x.set(0);
+    y.set(0);
   };
 
   return (
-    <div className="relative w-full flex flex-col items-center">
-      {/* Floating sparkles */}
-      {!shouldReduce && (
-        <div className="pointer-events-none absolute -inset-8 z-0">
-          {sparkles.map((s) => (
-            <motion.span
-              key={s.id}
-              className="absolute rounded-full"
-              style={{
-                top: `${s.top}%`,
-                left: `${s.left}%`,
-                width: s.size,
-                height: s.size,
-                boxShadow: "0 0 12px rgba(255,255,255,0.8)",
-                background: "radial-gradient(white, rgba(255,255,255,0.2))",
-              }}
-              initial={{ scale: 0.6, opacity: 0.0 }}
-              animate={{ scale: [0.6, 1.2, 0.6], opacity: [0.2, 0.9, 0.2] }}
-              transition={{ repeat: Infinity, duration: s.dur, delay: s.delay, ease: "easeInOut" }}
-              aria-hidden
-            />
-          ))}
-        </div>
-      )}
-
-      {/* Idle bob for the whole card */}
-      <motion.div
-        className="relative z-10"
-        animate={shouldReduce ? {} : { y: [0, -6, 0] }}
-        transition={{ repeat: Infinity, duration: 4, ease: "easeInOut" }}
-      >
-        {/* Holographic animated border */}
-        <motion.div
-          className="relative p-[2px] rounded-[26px]"
-          style={{
-            background:
-              "conic-gradient(from 0deg, #22d3ee, #6366f1, #10b981, #f59e0b, #ef4444, #22d3ee)",
-          }}
-          animate={shouldReduce ? {} : { rotate: 360 }}
-          transition={{ repeat: Infinity, duration: 18, ease: "linear" }}
-        >
-          {/* Soft outer glow */}
-          {!shouldReduce && (
-            <motion.div
-              aria-hidden
-              className="absolute -inset-2 rounded-[28px] blur-xl opacity-30"
-              style={{
-                background:
-                  "radial-gradient(circle at 30% 20%, rgba(99,102,241,0.4), transparent 60%), radial-gradient(circle at 70% 80%, rgba(16,185,129,0.35), transparent 60%)",
-              }}
-              animate={{ opacity: [0.2, 0.35, 0.2] }}
-              transition={{ repeat: Infinity, duration: 6 }}
-            />
-          )}
-
-          {/* Tilt + click/flip + ripple */}
-          <TiltCard className="relative rounded-[24px] overflow-hidden bg-white dark:bg-[#0d0d18]">
-            <motion.div
-              ref={cardRef}
-              onMouseMove={handleMouseMove}
-              onPointerDown={handlePointerDown}
-              onClick={() => setFlipped((v) => !v)}
-              className="relative w-[320px] sm:w-[360px] h-[200px] sm:h-[220px] rounded-[24px] cursor-pointer select-none"
-              style={{ transformStyle: "preserve-3d" }}
-              initial={{ opacity: 0, y: 12 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.6 }}
-              aria-label="Igifu Digital Card"
-            >
-              {/* 3D flipper */}
-              <motion.div
-                className="absolute inset-0"
-                style={{ transformStyle: "preserve-3d" }}
-                animate={{ rotateY: flipped ? 180 : 0 }}
-                transition={{ duration: 0.65, ease: [0.22, 1, 0.36, 1] }}
-              >
-                {/* FRONT */}
-                <div className="absolute inset-0" style={{ backfaceVisibility: "hidden" }}>
-                  {/* Animated gradient background */}
-                  <motion.div
-                    className="absolute inset-0"
-                    style={{
-                      background:
-                        "linear-gradient(135deg, rgba(59,130,246,0.95), rgba(99,102,241,0.95), rgba(16,185,129,0.95))",
-                      backgroundSize: "200% 200%",
-                      mixBlendMode: "normal",
-                    }}
-                    animate={
-                      shouldReduce
-                        ? {}
-                        : { backgroundPosition: ["0% 50%", "100% 50%", "0% 50%"] }
-                    }
-                    transition={{ repeat: Infinity, duration: 10, ease: "linear" }}
-                    aria-hidden
-                  />
-                  {/* Subtle texture */}
-                  <div
-                    className="absolute inset-0 mix-blend-overlay opacity-[0.12]"
-                    style={{
-                      backgroundImage:
-                        "radial-gradient(rgba(255,255,255,.22) 1px, transparent 1px)",
-                      backgroundSize: "6px 6px",
-                    }}
-                    aria-hidden
-                  />
-                  {/* Shine follows cursor */}
-                  <div
-                    className="absolute inset-0 pointer-events-none"
-                    style={{
-                      background: `radial-gradient(380px circle at ${mouse.x}px ${mouse.y}px, rgba(255,255,255,0.18), transparent 40%)`,
-                    }}
-                    aria-hidden
-                  />
-                  {/* Diagonal sweep */}
-                  {!shouldReduce && (
-                    <motion.div
-                      className="absolute inset-0 pointer-events-none"
-                      initial={{ x: "-120%" }}
-                      animate={{ x: ["-120%", "120%"] }}
-                      transition={{ repeat: Infinity, duration: 4.8, ease: "easeInOut", delay: 0.8 }}
-                      style={{
-                        background:
-                          "linear-gradient(115deg, transparent 40%, rgba(255,255,255,0.28) 50%, transparent 60%)",
-                      }}
-                      aria-hidden
-                    />
-                  )}
-
-                  {/* Top row: brand + balance */}
-                  <div className="relative z-10 flex items-center justify-between p-4 sm:p-5 text-white">
-                    <div className="flex items-center gap-2">
-                      <span className="text-xl" aria-hidden>🍽️</span>
-                      <span className="font-semibold tracking-wide">igifu</span>
-                    </div>
-                    <motion.div
-                      className="bg-white/20 backdrop-blur-md text-white text-xs rounded-full px-3 py-1.5 border border-white/30 shadow"
-                      animate={shouldReduce ? {} : { scale: [1, 1.04, 1] }}
-                      transition={{ repeat: Infinity, duration: 2.8 }}
-                    >
-                      Balance: RWF {balance.toLocaleString()}
-                    </motion.div>
-                  </div>
-
-                  {/* Middle row: chip + contactless */}
-                  <div className="relative z-10 flex items-center justify-between px-4 sm:px-5 mt-2 sm:mt-3 text-white">
-                    <motion.div
-                      className="flex items-center gap-3"
-                      animate={shouldReduce ? {} : { x: [0, 0.8, 0] }}
-                      transition={{ repeat: Infinity, duration: 5 }}
-                    >
-                      {/* Chip */}
-                      <motion.div
-                        className="w-10 h-7 rounded-md border border-yellow-500/50 shadow-inner"
-                        style={{
-                          background:
-                            "linear-gradient(135deg,#ffe29a,#f7c948,#d97706)",
-                        }}
-                        animate={
-                          shouldReduce ? {} : { filter: ["saturate(1)", "saturate(1.15)", "saturate(1)"] }
-                        }
-                        transition={{ repeat: Infinity, duration: 3.2 }}
-                        aria-hidden
-                      />
-                      <div className="text-white/95 text-[11px] sm:text-xs">
-                        <div className="uppercase tracking-wider font-semibold">
-                          Digital Meal Card
-                        </div>
-                        <div className="opacity-85">{campus}</div>
-                      </div>
-                    </motion.div>
-
-                    {/* Contactless waves */}
-                    {!shouldReduce && (
-                      <div className="text-white/90" aria-label="Contactless ready">
-                        <motion.svg
-                          width="30" height="20" viewBox="0 0 30 20" fill="none"
-                          initial={{ opacity: 0.8 }}
-                          animate={{ opacity: [0.6, 1, 0.6] }}
-                          transition={{ repeat: Infinity, duration: 2.4 }}
-                        >
-                          <path d="M2 10c2-5 7-5 9 0" stroke="white" strokeOpacity=".85" strokeWidth="1.6" strokeLinecap="round">
-                            <animate attributeName="stroke-dashoffset" from="12" to="0" dur="2s" repeatCount="indefinite" />
-                          </path>
-                          <path d="M11 10c2-5 7-5 9 0" stroke="white" strokeOpacity=".55" strokeWidth="1.6" strokeLinecap="round">
-                            <animate attributeName="stroke-dashoffset" from="12" to="0" dur="2s" begin=".25s" repeatCount="indefinite" />
-                          </path>
-                          <path d="M20 10c2-5 7-5 9 0" stroke="white" strokeOpacity=".35" strokeWidth="1.6" strokeLinecap="round">
-                            <animate attributeName="stroke-dashoffset" from="12" to="0" dur="2s" begin=".5s" repeatCount="indefinite" />
-                          </path>
-                        </motion.svg>
-                      </div>
-                    )}
-                  </div>
-
-                  {/* Card number + holder */}
-                  <div className="relative z-10 px-4 sm:px-5 mt-4 text-white">
-                    <motion.div
-                      className="tracking-[0.22em] font-semibold text-sm sm:text-base"
-                      animate={shouldReduce ? {} : { letterSpacing: ["0.22em", "0.28em", "0.22em"] }}
-                      transition={{ repeat: Infinity, duration: 6 }}
-                    >
-                      IGIFU • 1234 • 5678
-                    </motion.div>
-                    <div className="mt-2 flex items-center justify-between text-xs sm:text-sm opacity-95">
-                      <div>
-                        <div className="uppercase opacity-70">Cardholder</div>
-                        <div className="font-semibold">{name}</div>
-                      </div>
-                      <div className="text-right">
-                        <div className="uppercase opacity-70">Valid Thru</div>
-                        <div className="font-semibold">12/26</div>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Holo foil overlay */}
-                  {!shouldReduce && (
-                    <motion.div
-                      className="absolute inset-0 mix-blend-screen opacity-20"
-                      style={{
-                        background:
-                          "conic-gradient(from 0deg, rgba(255,255,255,0.15), rgba(255,255,255,0.0) 35%, rgba(255,255,255,0.25) 60%, rgba(255,255,255,0.0) 85%)",
-                      }}
-                      animate={{ rotate: [0, 360] }}
-                      transition={{ repeat: Infinity, duration: 18, ease: "linear" }}
-                      aria-hidden
-                    />
-                  )}
-
-                  {/* Tap ripple */}
-                  {ripple && (
-                    <motion.span
-                      key={ripple.id}
-                      className="absolute rounded-full pointer-events-none"
-                      style={{
-                        left: ripple.x,
-                        top: ripple.y,
-                        width: 12,
-                        height: 12,
-                        background: "radial-gradient(rgba(255,255,255,0.6), transparent 60%)",
-                        transform: "translate(-50%, -50%)",
-                      }}
-                      initial={{ scale: 0.2, opacity: 0.9 }}
-                      animate={{ scale: 8, opacity: 0 }}
-                      transition={{ duration: 0.6, ease: "easeOut" }}
-                      aria-hidden
-                    />
-                  )}
-                </div>
-
-                {/* BACK (QR) */}
-                <div
-                  className="absolute inset-0 p-5 bg-gradient-to-br from-zinc-900 via-zinc-800 to-zinc-700 text-white"
-                  style={{ transform: "rotateY(180deg)", backfaceVisibility: "hidden" }}
-                >
-                  <div className="flex items-start justify-between">
-                    <div className="font-semibold tracking-wide">igifu • Pay</div>
-                    <div className="text-xs opacity-80">Card ID: IG-9X72</div>
-                  </div>
-
-                  {/* QR with scanning line */}
-                  <div className="mt-6 relative p-3 rounded-xl bg-white/10 border border-white/15 w-[160px] h-[160px] overflow-hidden">
-                    <div
-                      className="grid w-full h-full"
-                      style={{
-                        gridTemplateColumns: "repeat(18, minmax(0, 1fr))",
-                        gridTemplateRows: "repeat(18, minmax(0, 1fr))",
-                        gap: "2px",
-                      }}
-                    >
-                      {qr.flatMap((row, rIdx) =>
-                        row.map((filled, cIdx) => (
-                          <div
-                            key={`${rIdx}-${cIdx}`}
-                            className={filled ? "bg-white" : "bg-transparent"}
-                          />
-                        ))
-                      )}
-                    </div>
-                    {!shouldReduce && (
-                      <motion.div
-                        className="absolute left-0 right-0 h-[2px] bg-emerald-400/80 shadow-[0_0_12px_rgba(16,185,129,0.9)]"
-                        initial={{ top: "-2%" }}
-                        animate={{ top: ["-2%", "102%"] }}
-                        transition={{ repeat: Infinity, duration: 2.4, ease: "easeInOut" }}
-                      />
-                    )}
-                  </div>
-
-                  <p className="mt-4 text-xs text-white/80">
-                    Show this code at the register or tap your card on NFC terminals.
-                  </p>
-                </div>
-              </motion.div>
-            </motion.div>
-          </TiltCard>
-        </motion.div>
-      </motion.div>
-
-      {/* Actions */}
-      <div className="mt-3 flex items-center gap-2 z-10">
-        <Link
-          to="/signup"
-          className="px-4 py-2 rounded-full text-white bg-blue-600 hover:bg-blue-700 shadow active:scale-95 transition"
-        >
-          Use this card
-        </Link>
-        <motion.button
-          whileHover={shouldReduce ? {} : { y: -2 }}
-          className="px-4 py-2 rounded-full border border-gray-300 text-gray-800 bg-white/70 backdrop-blur hover:bg-white shadow-sm active:scale-95 transition dark:border-white/20 dark:text-white/90 dark:bg-white/10"
-          onClick={() => alert("Added to wallet")}
-        >
-          Add to Wallet
-        </motion.button>
-        <motion.button
-          whileHover={shouldReduce ? {} : { y: -2 }}
-          className="px-4 py-2 rounded-full border border-white/20 text-white bg-black/30 hover:bg-black/40 shadow-sm active:scale-95 transition"
-          onClick={() => alert("Top-up coming soon")}
-        >
-          Top up
-        </motion.button>
-      </div>
-
-      <p className="mt-2 text-xs text-gray-500 dark:text-gray-400 z-10">
-        Tip: Click the card to flip. Hover to tilt and see the shine.
-      </p>
-    </div>
+    <motion.div
+      ref={ref}
+      onMouseMove={handleMouseMove}
+      onMouseLeave={handleMouseLeave}
+      style={{ rotateX, rotateY, transformStyle: "preserve-3d" }}
+      className={className}
+      whileHover={{ scale: 1.03 }}
+      transition={{ type: "spring", stiffness: 260, damping: 20 }}
+    >
+      {children}
+    </motion.div>
   );
 }
 
 /**
- * Loader with progress + reduced-motion friendly
+ * Premium Loading Screen
  */
 function LoadingScreen() {
   const shouldReduce = useReducedMotion();
   const [progress, setProgress] = useState(0);
-  const msgs = useMemo(
-    () => [
-      "Cooking up components…",
-      "Sautéing state…",
-      "Simmering springs…",
-      "Plating pixels…",
-    ],
-    []
-  );
-  const msg = msgs[Math.min(Math.floor(progress / 25), msgs.length - 1)];
 
   useEffect(() => {
-    const id = setInterval(
-      () => setProgress((p) => Math.min(p + 2 + Math.random() * 6, 100)),
-      80
-    );
-    return () => clearInterval(id);
+    const interval = setInterval(() => {
+      setProgress((p) => {
+        if (p >= 100) {
+          clearInterval(interval);
+          return 100;
+        }
+        return p + Math.random() * 15;
+      });
+    }, 150);
+    return () => clearInterval(interval);
   }, []);
 
   return (
-    <div
-      className="flex flex-col items-center justify-center min-h-screen bg-[#0a0a23] text-yellow-400 relative overflow-hidden"
-      style={{ fontFamily: "Poppins, system-ui, sans-serif" }}
-      aria-busy="true"
+    <motion.div
+      className="fixed inset-0 z-[100] flex flex-col items-center justify-center bg-gradient-to-br from-blue-600 via-indigo-700 to-purple-800"
+      initial={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+      transition={{ duration: 0.5 }}
     >
+      {/* Animated background particles */}
+      <div className="absolute inset-0 overflow-hidden">
+        {Array.from({ length: 20 }).map((_, i) => (
+          <motion.div
+            key={i}
+            className="absolute w-2 h-2 bg-white/30 rounded-full"
+            style={{
+              left: `${Math.random() * 100}%`,
+              top: `${Math.random() * 100}%`,
+            }}
+            animate={{
+              y: [0, -30, 0],
+              opacity: [0.2, 0.8, 0.2],
+            }}
+            transition={{
+              repeat: Infinity,
+              duration: 2 + Math.random() * 2,
+              delay: Math.random() * 2,
+            }}
+          />
+        ))}
+      </div>
+
+      {/* Logo */}
       <motion.div
-        className="w-40 h-40 border-4 border-yellow-400 rounded-full flex items-center justify-center relative"
-        animate={shouldReduce ? {} : { rotate: 360 }}
-        transition={shouldReduce ? {} : { repeat: Infinity, duration: 3, ease: "linear" }}
-        style={{ boxShadow: "0 0 30px #facc15, inset 0 0 20px #facc15" }}
+        className="relative z-10 mb-8"
+        initial={{ scale: 0.5, opacity: 0 }}
+        animate={{ scale: 1, opacity: 1 }}
+        transition={{ duration: 0.5 }}
       >
-        <div
-          className="absolute w-36 h-36 border-t-4 border-yellow-400 rounded-full"
-          style={{ transform: "rotate(45deg)" }}
-        />
-        <div className="text-center space-y-1">
-          <p className="text-sm font-semibold">igifu</p>
-          <div className="text-2xl" aria-hidden>🍽️</div>
-        </div>
-        <div className="absolute text-lg" style={{ top: "-10px", left: "45%" }} aria-hidden>
-          🍴
-        </div>
-        <div className="absolute text-lg" style={{ bottom: "-10px", left: "45%" }} aria-hidden>
-          🥄
-        </div>
-      </motion.div>
-      <p className="mt-5 text-xs tracking-widest">{msg}</p>
-      <div className="w-64 h-2 bg-yellow-900/40 rounded mt-4 overflow-hidden">
         <motion.div
-          className="h-full bg-yellow-400"
-          initial={{ width: 0 }}
-          animate={{ width: `${progress}%` }}
-          transition={{ ease: "easeOut", duration: 0.3 }}
+          className="w-24 h-24 rounded-full bg-white/10 backdrop-blur-xl border border-white/20 flex items-center justify-center shadow-2xl"
+          animate={shouldReduce ? {} : { rotate: 360 }}
+          transition={{ repeat: Infinity, duration: 3, ease: "linear" }}
+        >
+          <span className="text-5xl">🍽️</span>
+        </motion.div>
+      </motion.div>
+
+      {/* Brand name */}
+      <motion.h1
+        className="text-4xl font-bold text-white mb-2"
+        initial={{ y: 20, opacity: 0 }}
+        animate={{ y: 0, opacity: 1 }}
+        transition={{ delay: 0.2 }}
+      >
+        Igifu
+      </motion.h1>
+      
+      <motion.p
+        className="text-white/80 text-sm mb-8"
+        initial={{ y: 20, opacity: 0 }}
+        animate={{ y: 0, opacity: 1 }}
+        transition={{ delay: 0.3 }}
+      >
+        Your Digital Meal Card
+      </motion.p>
+
+      {/* Progress bar */}
+      <div className="w-64 h-1.5 bg-white/20 rounded-full overflow-hidden">
+        <motion.div
+          className="h-full bg-gradient-to-r from-white via-yellow-200 to-white"
+          style={{ width: `${Math.min(progress, 100)}%` }}
+          transition={{ duration: 0.3 }}
         />
       </div>
+      
+      <motion.p
+        className="mt-4 text-white/60 text-xs"
+        animate={{ opacity: [0.5, 1, 0.5] }}
+        transition={{ repeat: Infinity, duration: 1.5 }}
+      >
+        Loading your experience...
+      </motion.p>
+    </motion.div>
+  );
+}
+
+/**
+ * Premium Digital Card Component
+ */
+function IgifuDigitalCard({ startBalance = 25000, name = "Student Name" }) {
+  const navigate = useNavigate();
+  const shouldReduce = useReducedMotion();
+  const [flipped, setFlipped] = useState(false);
+  const balance = useCounter(startBalance, 1.5);
+
+  return (
+    <div className="relative w-full max-w-md mx-auto perspective-1000">
+      {/* Floating glow effect */}
+      {!shouldReduce && (
+        <motion.div
+          className="absolute -inset-4 bg-gradient-to-r from-blue-600/30 via-purple-600/30 to-pink-600/30 rounded-3xl blur-3xl"
+          animate={{
+            opacity: [0.3, 0.6, 0.3],
+            scale: [0.95, 1.05, 0.95],
+          }}
+          transition={{ repeat: Infinity, duration: 4 }}
+        />
+      )}
+
+      {/* Card container */}
       <motion.div
-        className="absolute w-60 h-60 bg-yellow-400 rounded-full opacity-20 blur-3xl"
-        animate={shouldReduce ? {} : { scale: [1, 1.2, 1] }}
-        transition={{ repeat: Infinity, duration: 4 }}
-        aria-hidden
-      />
+        className="relative cursor-pointer"
+        onClick={() => setFlipped(!flipped)}
+        whileHover={{ scale: 1.02 }}
+        whileTap={{ scale: 0.98 }}
+        style={{ transformStyle: "preserve-3d" }}
+      >
+        <motion.div
+          className="relative w-full aspect-[1.6/1] rounded-3xl"
+          animate={{ rotateY: flipped ? 180 : 0 }}
+          transition={{ duration: 0.6, type: "spring", stiffness: 100 }}
+          style={{ transformStyle: "preserve-3d" }}
+        >
+          {/* Front Side */}
+          <div
+            className="absolute inset-0 rounded-3xl overflow-hidden shadow-2xl"
+            style={{ backfaceVisibility: "hidden" }}
+          >
+            {/* Animated gradient background */}
+            <div className="absolute inset-0 bg-gradient-to-br from-blue-600 via-indigo-600 to-purple-700" />
+            
+            {/* Mesh gradient overlay */}
+            <motion.div
+              className="absolute inset-0 opacity-40"
+              style={{
+                background: "radial-gradient(circle at 20% 50%, rgba(255,255,255,0.2) 0%, transparent 50%), radial-gradient(circle at 80% 80%, rgba(255,255,255,0.15) 0%, transparent 50%)",
+              }}
+              animate={shouldReduce ? {} : {
+                backgroundPosition: ["0% 0%", "100% 100%", "0% 0%"],
+              }}
+              transition={{ duration: 10, repeat: Infinity }}
+            />
+
+            {/* Content */}
+            <div className="relative h-full flex flex-col justify-between p-6 sm:p-8 text-white">
+              {/* Top row */}
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <span className="text-2xl">🍽️</span>
+                  <span className="text-lg font-bold tracking-wide">igifu</span>
+                </div>
+                <motion.div
+                  className="bg-white/20 backdrop-blur-md px-3 py-1.5 rounded-full text-xs font-semibold"
+                  animate={shouldReduce ? {} : { scale: [1, 1.05, 1] }}
+                  transition={{ repeat: Infinity, duration: 2 }}
+                >
+                  Active
+                </motion.div>
+              </div>
+
+              {/* Chip */}
+              <div className="flex items-center gap-3">
+                <motion.div
+                  className="w-12 h-9 rounded-lg"
+                  style={{
+                    background: "linear-gradient(135deg, #FFD700, #FFA500, #FF8C00)",
+                  }}
+                  animate={shouldReduce ? {} : { rotateY: [0, 10, 0] }}
+                  transition={{ repeat: Infinity, duration: 3 }}
+                />
+                <div className="flex gap-1">
+                  {[0, 1, 2, 3].map((i) => (
+                    <motion.div
+                      key={i}
+                      className="w-1.5 h-1.5 rounded-full bg-white/60"
+                      animate={shouldReduce ? {} : { opacity: [0.6, 1, 0.6] }}
+                      transition={{
+                        repeat: Infinity,
+                        duration: 1.5,
+                        delay: i * 0.2,
+                      }}
+                    />
+                  ))}
+                </div>
+              </div>
+
+              {/* Balance */}
+              <div>
+                <div className="text-xs opacity-80 mb-1">Available Balance</div>
+                <motion.div
+                  className="text-3xl sm:text-4xl font-bold tracking-tight"
+                  key={balance}
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                >
+                  RWF {balance.toLocaleString()}
+                </motion.div>
+              </div>
+
+              {/* Bottom info */}
+              <div className="flex items-end justify-between">
+                <div>
+                  <div className="text-[10px] opacity-70 mb-1">CARDHOLDER</div>
+                  <div className="text-sm font-semibold">{name}</div>
+                </div>
+                <div className="text-right">
+                  <div className="text-[10px] opacity-70 mb-1">VALID THRU</div>
+                  <div className="text-sm font-semibold">12/26</div>
+                </div>
+              </div>
+            </div>
+
+            {/* Shine effect */}
+            {!shouldReduce && (
+              <motion.div
+                className="absolute inset-0 bg-gradient-to-tr from-transparent via-white/10 to-transparent"
+                animate={{
+                  x: ["-100%", "200%"],
+                }}
+                transition={{
+                  repeat: Infinity,
+                  duration: 3,
+                  ease: "easeInOut",
+                  repeatDelay: 1,
+                }}
+              />
+            )}
+          </div>
+
+          {/* Back Side */}
+          <div
+            className="absolute inset-0 rounded-3xl overflow-hidden bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 shadow-2xl"
+            style={{ backfaceVisibility: "hidden", transform: "rotateY(180deg)" }}
+          >
+            <div className="relative h-full flex flex-col items-center justify-center p-8 text-white">
+              {/* QR Code placeholder */}
+              <div className="w-40 h-40 bg-white rounded-2xl mb-4 flex items-center justify-center">
+                <div className="w-36 h-36 bg-black rounded-xl relative overflow-hidden">
+                  {/* Simple QR pattern */}
+                  <div className="absolute inset-0 grid grid-cols-6 grid-rows-6 gap-1 p-2">
+                    {Array.from({ length: 36 }).map((_, i) => (
+                      <div
+                        key={i}
+                        className={`${
+                          Math.random() > 0.5 ? "bg-white" : "bg-black"
+                        } rounded-sm`}
+                      />
+                    ))}
+                  </div>
+                </div>
+              </div>
+              
+              <h3 className="text-lg font-bold mb-2">Scan to Pay</h3>
+              <p className="text-sm text-gray-400 text-center">
+                Show this code at any campus restaurant
+              </p>
+              
+              <div className="mt-6 text-xs text-gray-500">
+                Card ID: IG-{Math.random().toString(36).substr(2, 6).toUpperCase()}
+              </div>
+            </div>
+          </div>
+        </motion.div>
+      </motion.div>
+
+      {/* Action Buttons */}
+      <div className="mt-6 flex flex-col sm:flex-row items-center gap-3">
+        <motion.button
+          whileHover={{ scale: 1.05 }}
+          whileTap={{ scale: 0.95 }}
+          onClick={() => navigate('/signup')}
+          className="w-full sm:w-auto px-6 py-3 rounded-xl bg-gradient-to-r from-blue-600 to-purple-600 text-white font-semibold shadow-lg hover:shadow-xl transition-all"
+        >
+          Get This Card Free
+        </motion.button>
+        
+        <motion.button
+          whileHover={{ scale: 1.05 }}
+          whileTap={{ scale: 0.95 }}
+          onClick={() => navigate('/login')}
+          className="w-full sm:w-auto px-6 py-3 rounded-xl border-2 border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 font-semibold hover:bg-gray-100 dark:hover:bg-gray-800 transition-all"
+        >
+          Already Have Card?
+        </motion.button>
+      </div>
+
+      {/* Hint text */}
+      <motion.p
+        className="text-center text-xs text-gray-500 dark:text-gray-400 mt-4"
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ delay: 0.5 }}
+      >
+        Click card to flip • Hover for effects
+      </motion.p>
     </div>
   );
 }
 
 /**
- * Small testimonial slider
+ * Feature Card Component
  */
-function TestimonialSlider() {
-  const items = [
-    {
-      quote:
-        "I loaded my Igifu card in seconds—and used it to buy lunch right away.",
-      who: "Maya • Freshman",
-    },
-    { quote: "Secure and easy. This is the campus food wallet I actually use.", who: "Owen • Senior" },
-    { quote: "No more lost meal swipes. Everything is on the card.", who: "Priya • Sophomore" },
-  ];
-  const [i, setI] = useState(0);
-  const next = () => setI((p) => (p + 1) % items.length);
-  const prev = () => setI((p) => (p - 1 + items.length) % items.length);
-
+function FeatureCard({ icon, title, description, color, delay = 0 }) {
   return (
-    <div className="w-full max-w-xl mx-auto mt-10">
-      <div className="flex items-center justify-between mb-3">
-        <h3 className="text-sm font-semibold text-gray-500">What students say</h3>
-        <div className="flex gap-2">
-          <button onClick={prev} className="px-2 py-1 text-xs rounded border border-gray-300 hover:bg-gray-50" aria-label="Previous testimonial">←</button>
-          <button onClick={next} className="px-2 py-1 text-xs rounded border border-gray-300 hover:bg-gray-50" aria-label="Next testimonial">→</button>
-        </div>
-      </div>
-      <div className="relative h-24">
-        <AnimatePresence mode="wait">
-          <motion.blockquote
-            key={i}
-            className="absolute inset-0 bg-white/70 dark:bg-white/5 backdrop-blur rounded-xl p-4 border border-gray-200 dark:border-white/10"
-            initial={{ opacity: 0, y: 10, scale: 0.98 }}
-            animate={{ opacity: 1, y: 0, scale: 1 }}
-            exit={{ opacity: 0, y: -10, scale: 0.98 }}
-            transition={{ type: "spring", stiffness: 220, damping: 20 }}
+    <motion.div
+      initial={{ opacity: 0, y: 30 }}
+      whileInView={{ opacity: 1, y: 0 }}
+      viewport={{ once: true, amount: 0.3 }}
+      transition={{ duration: 0.5, delay }}
+      whileHover={{ y: -8 }}
+    >
+      <TiltCard>
+        <div className="h-full bg-white dark:bg-gray-800 rounded-2xl p-6 border border-gray-200 dark:border-gray-700 shadow-lg hover:shadow-2xl transition-shadow duration-300">
+          <motion.div
+            className={`w-14 h-14 rounded-2xl bg-gradient-to-br ${color} flex items-center justify-center text-2xl mb-4 shadow-lg`}
+            whileHover={{ rotate: [0, -10, 10, 0], scale: 1.1 }}
+            transition={{ duration: 0.5 }}
           >
-            <p className="text-gray-700 dark:text-gray-200 text-sm leading-relaxed">“{items[i].quote}”</p>
-            <footer className="mt-2 text-xs text-gray-500 dark:text-gray-400">— {items[i].who}</footer>
-          </motion.blockquote>
-        </AnimatePresence>
-      </div>
-    </div>
+            {icon}
+          </motion.div>
+          <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-2">
+            {title}
+          </h3>
+          <p className="text-gray-600 dark:text-gray-300 text-sm leading-relaxed">
+            {description}
+          </p>
+        </div>
+      </TiltCard>
+    </motion.div>
   );
 }
 
-const WelcomePage = () => {
-  const [loading, setLoading] = useState(true);
+/**
+ * Testimonial Component
+ */
+function TestimonialCard({ quote, author, role, avatar, delay = 0 }) {
+  return (
+    <motion.div
+      initial={{ opacity: 0, scale: 0.9 }}
+      whileInView={{ opacity: 1, scale: 1 }}
+      viewport={{ once: true, amount: 0.3 }}
+      transition={{ duration: 0.5, delay }}
+      whileHover={{ y: -5 }}
+      className="bg-white dark:bg-gray-800 rounded-2xl p-6 border border-gray-200 dark:border-gray-700 shadow-lg hover:shadow-xl transition-all duration-300"
+    >
+      <div className="flex items-center gap-1 mb-4">
+        {[...Array(5)].map((_, i) => (
+          <span key={i} className="text-yellow-400 text-lg">★</span>
+        ))}
+      </div>
+      <p className="text-gray-700 dark:text-gray-300 mb-4 italic">
+        "{quote}"
+      </p>
+      <div className="flex items-center gap-3">
+        <div className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-400 to-purple-600 flex items-center justify-center text-white font-bold">
+          {avatar}
+        </div>
+        <div>
+          <div className="font-semibold text-gray-900 dark:text-white">{author}</div>
+          <div className="text-xs text-gray-500 dark:text-gray-400">{role}</div>
+        </div>
+      </div>
+    </motion.div>
+  );
+}
 
-  // Theme: read from localStorage or system preference by default
+/**
+ * Stat Counter Component
+ */
+function StatCounter({ value, label, suffix = "", prefix = "" }) {
+  const count = useCounter(value, 2);
+  
+  return (
+    <motion.div
+      initial={{ opacity: 0, scale: 0.5 }}
+      whileInView={{ opacity: 1, scale: 1 }}
+      viewport={{ once: true, amount: 0.3 }}
+      transition={{ duration: 0.5, type: "spring" }}
+      className="text-center"
+    >
+      <motion.div
+        className="text-4xl sm:text-5xl md:text-6xl font-bold bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 bg-clip-text text-transparent"
+        whileHover={{ scale: 1.1 }}
+      >
+        {prefix}{count.toLocaleString()}{suffix}
+      </motion.div>
+      <div className="text-gray-600 dark:text-gray-400 mt-2 text-sm sm:text-base">
+        {label}
+      </div>
+    </motion.div>
+  );
+}
+
+/**
+ * Main Welcome Page
+ */
+const WelcomePage = () => {
+  const navigate = useNavigate();
+  const [loading, setLoading] = useState(true);
+  const shouldReduce = useReducedMotion();
+
+  // Theme management
   const [theme, setTheme] = useState(() => {
     const saved = localStorage.getItem("theme");
     if (saved) return saved;
     if (typeof window !== "undefined" && window.matchMedia) {
-      return window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
+      return window.matchMedia("(prefers-color-scheme: dark)").matches
+        ? "dark"
+        : "light";
     }
     return "light";
   });
 
-  const shouldReduce = useReducedMotion();
-
   useEffect(() => {
-    const timer = setTimeout(() => setLoading(false), 2200);
+    const timer = setTimeout(() => setLoading(false), 2500);
     return () => clearTimeout(timer);
   }, []);
 
-  // Apply theme to <html> and persist
   useEffect(() => {
     localStorage.setItem("theme", theme);
     document.documentElement.classList.toggle("dark", theme === "dark");
   }, [theme]);
 
-  // Optional: sync theme across tabs
-  useEffect(() => {
-    const onStorage = (e) => {
-      if (e.key === "theme" && e.newValue) {
-        document.documentElement.classList.toggle("dark", e.newValue === "dark");
-      }
-    };
-    window.addEventListener("storage", onStorage);
-    return () => window.removeEventListener("storage", onStorage);
-  }, []);
-
-  // Scroll progress bar
-  const [scrollPct, setScrollPct] = useState(0);
-  useEffect(() => {
-    const onScroll = () => {
-      const h = document.documentElement;
-      setScrollPct((h.scrollTop / (h.scrollHeight - h.clientHeight)) * 100);
-    };
-    window.addEventListener("scroll", onScroll, { passive: true });
-    onScroll();
-    return () => window.removeEventListener("scroll", onScroll);
-  }, []);
-
-  // Stats
-  const meals = useCounter(12400, 1.6);
-  const students = useCounter(3200, 1.6);
-  const campuses = useCounter(28, 1.6);
+  // Scroll progress
+  const { scrollYProgress } = useScroll();
+  const scaleX = useSpring(scrollYProgress, {
+    stiffness: 100,
+    damping: 30,
+    restDelta: 0.001,
+  });
 
   if (loading) return <LoadingScreen />;
 
   return (
-    <div className="relative min-h-screen bg-white text-gray-800 dark:bg-[#0b0b12] dark:text-gray-100 font-sans overflow-hidden selection:bg-blue-600/20 transition-colors duration-300">
-      {/* Skip link */}
-      <a href="#main" className="sr-only focus:not-sr-only focus:absolute focus:top-3 focus:left-3 focus:bg-blue-600 focus:text-white focus:px-3 focus:py-2 focus:rounded">Skip to content</a>
+    <div className="relative min-h-screen bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-white overflow-hidden transition-colors duration-500">
+      {/* Scroll Progress Bar */}
+      <motion.div
+        className="fixed top-0 left-0 right-0 h-1 bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 origin-left z-50"
+        style={{ scaleX }}
+      />
 
-      {/* Scroll progress */}
-      <div className="fixed top-0 left-0 right-0 h-1 bg-transparent z-50">
+      {/* Animated Background Elements */}
+      <div className="fixed inset-0 overflow-hidden pointer-events-none">
         <motion.div
-          className="h-full bg-gradient-to-r from-blue-600 via-indigo-500 to-emerald-500"
-          style={{ width: `${scrollPct}%` }}
-          transition={{ type: "tween", ease: "linear", duration: 0.1 }}
+          className="absolute -top-40 -right-40 w-96 h-96 bg-blue-500/10 rounded-full blur-3xl"
+          animate={shouldReduce ? {} : {
+            x: [0, 50, 0],
+            y: [0, 30, 0],
+          }}
+          transition={{ repeat: Infinity, duration: 20 }}
+        />
+        <motion.div
+          className="absolute -bottom-40 -left-40 w-96 h-96 bg-purple-500/10 rounded-full blur-3xl"
+          animate={shouldReduce ? {} : {
+            x: [0, -30, 0],
+            y: [0, 50, 0],
+          }}
+          transition={{ repeat: Infinity, duration: 15 }}
+        />
+        <motion.div
+          className="absolute top-1/2 left-1/2 w-96 h-96 bg-pink-500/10 rounded-full blur-3xl"
+          animate={shouldReduce ? {} : {
+            scale: [1, 1.2, 1],
+            rotate: [0, 180, 360],
+          }}
+          transition={{ repeat: Infinity, duration: 25 }}
         />
       </div>
 
-      {/* Background orbs */}
-      <motion.div
-        className="pointer-events-none absolute -top-24 -left-24 w-96 h-96 rounded-full blur-3xl opacity-30"
-        style={{
-          background:
-            "radial-gradient(closest-side, rgba(59,130,246,0.5), transparent)",
-        }}
-        animate={shouldReduce ? {} : { y: [0, 10, 0], x: [0, 6, 0] }}
-        transition={{ repeat: Infinity, duration: 8 }}
-        aria-hidden
-      />
-      <motion.div
-        className="pointer-events-none absolute bottom-0 right-0 w-[28rem] h-[28rem] rounded-full blur-3xl opacity-25"
-        style={{
-          background:
-            "radial-gradient(closest-side, rgba(234,179,8,0.45), transparent)",
-        }}
-        animate={shouldReduce ? {} : { y: [0, -12, 0], x: [0, -8, 0] }}
-        transition={{ repeat: Infinity, duration: 9 }}
-        aria-hidden
-      />
-
-      {/* Header */}
-      <header className="relative z-10 w-full flex items-center justify-between px-6 pt-6">
-        <motion.div
-          className="flex items-center gap-2"
-          initial={{ opacity: 0, y: -8 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5 }}
-        >
-          <span className="text-2xl" aria-hidden>🍽️</span>
-          <span className="font-semibold tracking-tight">Igifu</span>
-        </motion.div>
-
-        <div className="flex items-center gap-3">
-          <span className="hidden sm:inline text-gray-600 dark:text-gray-300">Welcome 🙂</span>
-
-          <motion.button
-            whileTap={{ scale: 0.95, rotate: 10 }}
-            onClick={() => setTheme((t) => (t === "light" ? "dark" : "light"))}
-            className="rounded-full border border-gray-300 dark:border-white/20 px-3 py-1 text-xs hover:bg-gray-50 dark:hover:bg-white/10"
-            aria-label="Toggle theme"
-          >
-            {theme === "dark" ? "🌙 Dark" : "☀️ Light"}
-          </motion.button>
-
-          <Link
-            to="/signup"
-            className="bg-yellow-400 text-gray-900 font-semibold px-4 py-1 rounded-full shadow hover:bg-yellow-500 transition-transform active:scale-95"
-            aria-label="Go to next section"
-          >
-            Next
-          </Link>
-        </div>
-      </header>
-
-      {/* Main */}
-      <main id="main" className="relative z-10 flex flex-col items-center mt-16 px-6">
-        {/* Hero: Digital Card */}
-        <motion.div
-          className="relative mb-8"
-          initial={{ opacity: 0, y: 18, scale: 0.9 }}
-          animate={{ opacity: 1, y: 0, scale: 1 }}
-          transition={{ duration: 0.6, delay: 0.1, ease: "easeOut" }}
-        >
-          <IgifuDigitalCard startBalance={25000} name="Student Name" campus="Kigali Campus" />
-        </motion.div>
-
-        {/* Heading */}
-        <motion.h1
-          className="text-center text-3xl sm:text-4xl md:text-5xl font-extrabold leading-tight max-w-3xl"
-          initial={{ opacity: 0, y: 8 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.2, duration: 0.6 }}
-        >
-          <span className="text-gray-800 dark:text-gray-100">The Only Card You Need for </span>
-          <motion.span
-            className="bg-clip-text text-transparent bg-[linear-gradient(90deg,#2563eb,45%,#7c3aed,65%,#10b981)]"
-            animate={shouldReduce ? {} : { backgroundPositionX: ["0%", "100%"] }}
-            transition={{ repeat: Infinity, duration: 4, ease: "linear" }}
-            style={{ backgroundSize: "200% 100%" }}
-          >
-            Campus Dining
-          </motion.span>
-        </motion.h1>
-
-        <p className="mt-3 text-center text-gray-600 dark:text-gray-300 text-base max-w-xl">
-          Tap into a seamless dining experience. The Igifu card makes campus meals digital, fast, and secure. Your all-access pass to food, right in your pocket.
-        </p>
-
-        {/* CTAs */}
-        <div className="mt-6 flex flex-col sm:flex-row items-center gap-3">
-          <motion.div whileHover={shouldReduce ? {} : { y: -2 }}>
-            <Link
-              to="/signup"
-              className="w-full sm:w-auto inline-flex justify-center items-center px-6 py-3 rounded-full font-semibold bg-blue-600 text-white shadow hover:shadow-lg hover:bg-blue-700 active:scale-95 transition"
-            >
-              Get Your Card — it’s free
-            </Link>
-          </motion.div>
-          <motion.div whileHover={shouldReduce ? {} : { y: -2 }}>
-            <Link
-              to="/login"
-              className="w-full sm:w-auto inline-flex justify-center items-center px-6 py-3 rounded-full font-semibold border border-blue-600 text-blue-700 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-white/5 active:scale-95 transition"
-            >
-              Log In
-            </Link>
-          </motion.div>
-        </div>
-
-        {/* Feature cards */}
-        <section className="mt-10 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 w-full max-w-5xl">
-          {[
-            { title: "Load Instantly", body: "Top up your card from anywhere, anytime.", emoji: "⚡️" },
-            { title: "Tap & Pay", body: "Secure, contactless payments at all vendors.", emoji: "💳" },
-            { title: "Track Spending", body: "See history, budgets & get insights.", emoji: "📊" },
-          ].map((f) => (
-            <TiltCard key={f.title}>
+      {/* Navigation */}
+      <motion.nav
+        className="fixed top-0 left-0 right-0 z-40 bg-white/80 dark:bg-gray-900/80 backdrop-blur-xl border-b border-gray-200 dark:border-gray-800"
+        initial={{ y: -100 }}
+        animate={{ y: 0 }}
+        transition={{ duration: 0.5 }}
+      >
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex items-center justify-between h-16">
+            {/* Logo */}
+            <Link to="/">
               <motion.div
-                className="h-full bg-white dark:bg-[#0d0d18] border border-gray-200 dark:border-white/10 rounded-2xl p-5 shadow-sm hover:shadow-xl"
-                whileHover={{ y: -4 }}
+                className="flex items-center gap-2 cursor-pointer"
+                whileHover={{ scale: 1.05 }}
               >
-                <div className="text-2xl mb-2" aria-hidden>{f.emoji}</div>
-                <h3 className="font-semibold text-lg">{f.title}</h3>
-                <p className="mt-1 text-sm text-gray-600 dark:text-gray-400">{f.body}</p>
+                <span className="text-3xl">🍽️</span>
+                <span className="text-xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
+                  igifu
+                </span>
               </motion.div>
-            </TiltCard>
-          ))}
-        </section>
+            </Link>
 
-        {/* Stats */}
-        <section className="mt-10 w-full max-w-4xl grid grid-cols-3 gap-3 text-center">
-          <div className="rounded-xl border border-gray-200 dark:border-white/10 p-4 bg-white/70 dark:bg-white/5 backdrop-blur">
-            <div className="text-2xl font-extrabold tabular-nums">{meals.toLocaleString()}</div>
-            <div className="text-xs text-gray-500">Meals Served</div>
-          </div>
-          <div className="rounded-xl border border-gray-200 dark:border-white/10 p-4 bg-white/70 dark:bg-white/5 backdrop-blur">
-            <div className="text-2xl font-extrabold tabular-nums">{students.toLocaleString()}</div>
-            <div className="text-xs text-gray-500">Active Students</div>
-          </div>
-          <div className="rounded-xl border border-gray-200 dark:border-white/10 p-4 bg-white/70 dark:bg-white/5 backdrop-blur">
-            <div className="text-2xl font-extrabold tabular-nums">{campuses}</div>
-            <div className="text-xs text-gray-500">Partner Campuses</div>
-          </div>
-        </section>
+            {/* Nav Links */}
+            <div className="hidden md:flex items-center gap-6">
+              <a href="#features" className="text-sm font-medium hover:text-blue-600 transition-colors">
+                Features
+              </a>
+              <a href="#how-it-works" className="text-sm font-medium hover:text-blue-600 transition-colors">
+                How It Works
+              </a>
+              <a href="#testimonials" className="text-sm font-medium hover:text-blue-600 transition-colors">
+                Reviews
+              </a>
+            </div>
 
-        {/* Testimonials */}
-        <TestimonialSlider />
+            {/* Actions */}
+            <div className="flex items-center gap-3">
+              <motion.button
+                whileTap={{ scale: 0.95 }}
+                onClick={() => setTheme((t) => (t === "light" ? "dark" : "light"))}
+                className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+                aria-label="Toggle theme"
+              >
+                {theme === "dark" ? "🌙" : "☀️"}
+              </motion.button>
 
-        <div className="h-16" />
-      </main>
+              <motion.button
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+                onClick={() => navigate('/login')}
+                className="text-sm font-medium px-4 py-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+              >
+                Log In
+              </motion.button>
+
+              <motion.button
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+                onClick={() => navigate('/signup')}
+                className="text-sm font-medium px-4 py-2 rounded-lg bg-gradient-to-r from-blue-600 to-purple-600 text-white shadow-lg hover:shadow-xl transition-all"
+              >
+                Get Started
+              </motion.button>
+            </div>
+          </div>
+        </div>
+      </motion.nav>
+
+      {/* Hero Section */}
+      <section className="relative pt-32 pb-20 px-4 sm:px-6 lg:px-8">
+        <div className="max-w-7xl mx-auto">
+          <div className="grid lg:grid-cols-2 gap-12 items-center">
+            {/* Left: Text Content */}
+            <motion.div
+              initial={{ opacity: 0, x: -50 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ duration: 0.8 }}
+            >
+              <motion.div
+                className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 text-sm font-medium mb-6"
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.2 }}
+              >
+                <span className="w-2 h-2 rounded-full bg-blue-600 animate-pulse" />
+                New: Instant Card Activation
+              </motion.div>
+
+              <h1 className="text-5xl sm:text-6xl lg:text-7xl font-bold leading-tight mb-6">
+                Your Campus,{" "}
+                <span className="bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 bg-clip-text text-transparent">
+                  One Card
+                </span>
+              </h1>
+
+              <p className="text-xl text-gray-600 dark:text-gray-300 mb-8 leading-relaxed">
+                The smartest way to pay for meals on campus. Load money instantly,
+                tap to pay anywhere, and track every purchase. Welcome to the future
+                of campus dining.
+              </p>
+
+              <div className="flex flex-col sm:flex-row gap-4">
+                <motion.button
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
+                  onClick={() => navigate('/signup')}
+                  className="w-full sm:w-auto px-8 py-4 rounded-xl bg-gradient-to-r from-blue-600 to-purple-600 text-white font-semibold shadow-2xl shadow-blue-500/50 hover:shadow-blue-500/70 transition-all text-lg"
+                >
+                  Get Your Free Card →
+                </motion.button>
+
+                <motion.button
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
+                  onClick={() => navigate('/login')}
+                  className="w-full sm:w-auto px-8 py-4 rounded-xl border-2 border-gray-300 dark:border-gray-700 font-semibold hover:bg-gray-100 dark:hover:bg-gray-800 transition-all text-lg"
+                >
+                  I Have a Card
+                </motion.button>
+              </div>
+
+              {/* Trust Indicators */}
+              <div className="flex items-center gap-6 mt-10">
+                <div className="flex -space-x-2">
+                  {["👨", "👩", "🧑", "👨‍🦱"].map((emoji, i) => (
+                    <div
+                      key={i}
+                      className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-400 to-purple-600 border-2 border-white dark:border-gray-900 flex items-center justify-center"
+                    >
+                      {emoji}
+                    </div>
+                  ))}
+                </div>
+                <div className="text-sm">
+                  <div className="font-semibold">3,200+ students</div>
+                  <div className="text-gray-600 dark:text-gray-400">already using Igifu</div>
+                </div>
+              </div>
+            </motion.div>
+
+            {/* Right: Card */}
+            <motion.div
+              id="demo"
+              initial={{ opacity: 0, scale: 0.8 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ duration: 0.8, delay: 0.2 }}
+            >
+              <IgifuDigitalCard startBalance={25000} name="Alex Student" />
+            </motion.div>
+          </div>
+        </div>
+      </section>
+
+      {/* Stats Section */}
+      <section className="relative py-20 px-4 sm:px-6 lg:px-8 bg-white dark:bg-gray-800">
+        <div className="max-w-7xl mx-auto">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-12">
+            <StatCounter value={12400} label="Meals Served" suffix="+" />
+            <StatCounter value={3200} label="Active Students" suffix="+" />
+            <StatCounter value={28} label="Campus Partners" />
+          </div>
+        </div>
+      </section>
+
+      {/* Features Section */}
+      <section id="features" className="relative py-20 px-4 sm:px-6 lg:px-8">
+        <div className="max-w-7xl mx-auto">
+          <motion.div
+            className="text-center mb-16"
+            initial={{ opacity: 0, y: 30 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+          >
+            <h2 className="text-4xl sm:text-5xl font-bold mb-4">
+              Everything You Need,{" "}
+              <span className="bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
+                Nothing You Don't
+              </span>
+            </h2>
+            <p className="text-xl text-gray-600 dark:text-gray-300 max-w-2xl mx-auto">
+              Designed for students, by students. Simple, fast, and secure.
+            </p>
+          </motion.div>
+
+          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
+            <FeatureCard
+              icon="⚡"
+              title="Instant Top-Up"
+              description="Add money to your card in seconds via mobile money or bank transfer. No waiting, no hassle."
+              color="from-yellow-400 to-orange-500"
+              delay={0}
+            />
+            <FeatureCard
+              icon="💳"
+              title="Tap & Pay"
+              description="Just tap your card at any campus restaurant. Contactless, secure, and lightning-fast."
+              color="from-blue-500 to-cyan-500"
+              delay={0.1}
+            />
+            <FeatureCard
+              icon="📊"
+              title="Smart Insights"
+              description="Track your spending with beautiful charts. Set budgets and get alerts when you're running low."
+              color="from-purple-500 to-pink-500"
+              delay={0.2}
+            />
+            <FeatureCard
+              icon="🔒"
+              title="Bank-Level Security"
+              description="Your money is protected with military-grade encryption and fraud detection."
+              color="from-green-500 to-emerald-500"
+              delay={0.3}
+            />
+            <FeatureCard
+              icon="🎁"
+              title="Rewards Program"
+              description="Earn points with every purchase and redeem for free meals and discounts."
+              color="from-red-500 to-rose-500"
+              delay={0.4}
+            />
+            <FeatureCard
+              icon="💝"
+              title="Share Meals"
+              description="Gift meals to friends with one tap. Spread the love and help each other out."
+              color="from-indigo-500 to-violet-500"
+              delay={0.5}
+            />
+          </div>
+        </div>
+      </section>
+
+      {/* How It Works Section */}
+      <section id="how-it-works" className="relative py-20 px-4 sm:px-6 lg:px-8 bg-gradient-to-br from-blue-50 to-purple-50 dark:from-gray-800 dark:to-gray-900">
+        <div className="max-w-7xl mx-auto">
+          <motion.div
+            className="text-center mb-16"
+            initial={{ opacity: 0, y: 30 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+          >
+            <h2 className="text-4xl sm:text-5xl font-bold mb-4">
+              Get Started in{" "}
+              <span className="bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
+                3 Simple Steps
+              </span>
+            </h2>
+            <p className="text-xl text-gray-600 dark:text-gray-300">
+              You'll be eating with your Igifu card in under 2 minutes
+            </p>
+          </motion.div>
+
+          <div className="grid md:grid-cols-3 gap-8">
+            {[
+              {
+                step: "01",
+                title: "Sign Up Free",
+                description: "Create your account with just your student email. No credit check, no fees.",
+                icon: "✍️",
+              },
+              {
+                step: "02",
+                title: "Get Your Card",
+                description: "Receive your digital card instantly. Physical card arrives in 2-3 days.",
+                icon: "📲",
+              },
+              {
+                step: "03",
+                title: "Start Eating",
+                description: "Load money and start using your card at any campus restaurant immediately.",
+                icon: "🍽️",
+              },
+            ].map((item, index) => (
+              <motion.div
+                key={index}
+                initial={{ opacity: 0, y: 30 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ delay: index * 0.1 }}
+                whileHover={{ y: -10 }}
+                className="relative bg-white dark:bg-gray-800 rounded-2xl p-8 shadow-xl"
+              >
+                <div className="absolute -top-6 left-8 w-12 h-12 rounded-full bg-gradient-to-r from-blue-600 to-purple-600 flex items-center justify-center text-white font-bold shadow-lg">
+                  {item.step}
+                </div>
+                <div className="text-5xl mb-4 mt-4">{item.icon}</div>
+                <h3 className="text-2xl font-bold mb-3">{item.title}</h3>
+                <p className="text-gray-600 dark:text-gray-300">
+                  {item.description}
+                </p>
+              </motion.div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* Testimonials Section */}
+      <section id="testimonials" className="relative py-20 px-4 sm:px-6 lg:px-8">
+        <div className="max-w-7xl mx-auto">
+          <motion.div
+            className="text-center mb-16"
+            initial={{ opacity: 0, y: 30 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+          >
+            <h2 className="text-4xl sm:text-5xl font-bold mb-4">
+              Loved by{" "}
+              <span className="bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
+                Thousands of Students
+              </span>
+            </h2>
+            <p className="text-xl text-gray-600 dark:text-gray-300">
+              See what your peers are saying about Igifu
+            </p>
+          </motion.div>
+
+          <div className="grid md:grid-cols-3 gap-8">
+            <TestimonialCard
+              quote="I used to carry cash everywhere. Now I just tap my phone and I'm done. Game changer!"
+              author="Sarah K."
+              role="Computer Science, Year 3"
+              avatar="SK"
+              delay={0}
+            />
+            <TestimonialCard
+              quote="The budgeting feature saved me from overspending. I actually have money left at the end of the month now!"
+              author="Michael O."
+              role="Business, Year 2"
+              avatar="MO"
+              delay={0.1}
+            />
+            <TestimonialCard
+              quote="Being able to share meals with my friends when they're low on cash is amazing. We look out for each other."
+              author="Priya M."
+              role="Engineering, Year 4"
+              avatar="PM"
+              delay={0.2}
+            />
+          </div>
+        </div>
+      </section>
+
+      {/* CTA Section */}
+      <section className="relative py-20 px-4 sm:px-6 lg:px-8 bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600">
+        <div className="max-w-4xl mx-auto text-center">
+          <motion.div
+            initial={{ opacity: 0, scale: 0.9 }}
+            whileInView={{ opacity: 1, scale: 1 }}
+            viewport={{ once: true }}
+          >
+            <h2 className="text-4xl sm:text-5xl font-bold text-white mb-6">
+              Ready to Transform Your Campus Dining?
+            </h2>
+            <p className="text-xl text-white/90 mb-8">
+              Join thousands of students already using Igifu. Get your free digital
+              card today.
+            </p>
+            <div className="flex flex-col sm:flex-row gap-4 justify-center">
+              <motion.button
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+                onClick={() => navigate('/signup')}
+                className="px-8 py-4 rounded-xl bg-white text-purple-600 font-bold shadow-2xl hover:shadow-3xl transition-all text-lg"
+              >
+                Get Started Free →
+              </motion.button>
+              <motion.button
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+                onClick={() => navigate('/login')}
+                className="px-8 py-4 rounded-xl border-2 border-white text-white font-bold hover:bg-white/10 transition-all text-lg"
+              >
+                Login to My Account
+              </motion.button>
+            </div>
+          </motion.div>
+        </div>
+      </section>
 
       {/* Footer */}
-      <footer className="relative z-10 w-full text-center pb-6 text-gray-500 text-xs">
-        <motion.p
-          initial={{ opacity: 0 }}
-          whileInView={{ opacity: 1 }}
-          viewport={{ once: true, amount: 0.3 }}
-          transition={{ duration: 0.6 }}
-        >
-          © {new Date().getFullYear()} Igifu Digital Meals — All Rights Reserved 🍴
-        </motion.p>
+      <footer className="relative py-12 px-4 sm:px-6 lg:px-8 bg-gray-900 text-white">
+        <div className="max-w-7xl mx-auto">
+          <div className="grid md:grid-cols-4 gap-8">
+            <div>
+              <div className="flex items-center gap-2 mb-4">
+                <span className="text-2xl">🍽️</span>
+                <span className="text-xl font-bold">igifu</span>
+              </div>
+              <p className="text-gray-400 text-sm">
+                The smart campus meal card for the modern student.
+              </p>
+            </div>
+
+            <div>
+              <h4 className="font-bold mb-4">Product</h4>
+              <ul className="space-y-2 text-sm text-gray-400">
+                <li><a href="#features" className="hover:text-white transition-colors">Features</a></li>
+                <li><a href="#how-it-works" className="hover:text-white transition-colors">How It Works</a></li>
+                <li><a href="#" className="hover:text-white transition-colors">Security</a></li>
+              </ul>
+            </div>
+
+            <div>
+              <h4 className="font-bold mb-4">Account</h4>
+              <ul className="space-y-2 text-sm text-gray-400">
+                <li>
+                  <button onClick={() => navigate('/signup')} className="hover:text-white transition-colors">
+                    Sign Up
+                  </button>
+                </li>
+                <li>
+                  <button onClick={() => navigate('/login')} className="hover:text-white transition-colors">
+                    Login
+                  </button>
+                </li>
+                <li><a href="#" className="hover:text-white transition-colors">Contact Support</a></li>
+              </ul>
+            </div>
+
+            <div>
+              <h4 className="font-bold mb-4">Legal</h4>
+              <ul className="space-y-2 text-sm text-gray-400">
+                <li><a href="#" className="hover:text-white transition-colors">Privacy Policy</a></li>
+                <li><a href="#" className="hover:text-white transition-colors">Terms of Service</a></li>
+                <li><a href="#" className="hover:text-white transition-colors">Cookie Policy</a></li>
+              </ul>
+            </div>
+          </div>
+
+          <div className="border-t border-gray-800 mt-12 pt-8 text-center text-sm text-gray-400">
+            <p>© {new Date().getFullYear()} Igifu. All rights reserved. Made with 💙 for students.</p>
+          </div>
+        </div>
       </footer>
     </div>
   );
