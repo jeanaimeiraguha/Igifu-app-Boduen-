@@ -1,7 +1,6 @@
 import React, { useState } from "react";
 import { FaLock, FaArrowRight, FaQuestionCircle, FaUser, FaUtensils } from "react-icons/fa";
 import { useNavigate } from "react-router-dom";
-
 const SignUpPage = () => {
   const navigate = useNavigate();
   const [currentStep, setCurrentStep] = useState('roleSelection'); // 'roleSelection', 'form'
